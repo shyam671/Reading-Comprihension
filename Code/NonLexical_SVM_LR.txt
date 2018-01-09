@@ -1,0 +1,181 @@
+
+# coding: utf-8
+
+# In[ ]:
+
+import sys
+import os
+import numpy as np
+from numpy import array
+from numpy import argmax
+
+
+# In[ ]:
+
+with open("/home/ashutosh/Documents/MS_Coursework/NLP/NLP_Project/NLP/Project/Project_temp/snli_v2/train_s1_.txt", "r") as ins:
+    texts_s1 = []
+    for line in ins:
+        line = line.strip('\n')
+        line = line.strip('\t')
+        texts_s1.append(line)
+        
+with open("/home/ashutosh/Documents/MS_Coursework/NLP/NLP_Project/NLP/Project/Project_temp/snli_v2/train_s2_.txt", "r") as ins:
+    texts_s2 = []
+    for line in ins:
+        line = line.strip('\n')
+        line = line.strip('\t')
+        texts_s2.append(line)
+with open("/home/ashutosh/Documents/MS_Coursework/NLP/NLP_Project/NLP/Project/Project_temp/snli_v2/train_label_.txt", "r") as ins:
+    label = []
+    for line in ins:
+        line = line.strip('\n')
+        line = line.strip('\t')
+        label.append(int(line))       
+        
+PN_label = []
+PN_text_s1 = []
+PN_text_s2 = []
+count = 0
+for i in range(0,len(label)):
+    if (label[i])==2 or (label[i])==3:
+        count = count + 1
+        PN_label.append(label[i])
+        PN_text_s1.append(texts_s1[i])
+        PN_text_s2.append(texts_s2[i])
+        if count == 100000:
+            break;
+
+
+# In[ ]:
+
+import nltk
+BLEU_scores = []
+for i in range(0,len(PN_text_s1)):
+    print i
+    sentence1 = PN_text_s1[i]
+    sentence2 = PN_text_s2[i]
+    BLEUscore = nltk.translate.bleu_score.sentence_bleu(sentence2, sentence1)
+    BLEU_scores.append(float(BLEUscore))
+
+
+# In[ ]:
+
+print(BLEU_scores)
+
+
+# In[ ]:
+
+len_diff = []
+for i in range(0,len(PN_text_s1)):
+    sentence1 = len(PN_text_s1[i].split())
+    sentence2 = len(PN_text_s2[i].split())
+    DFS = sentence2-sentence1
+    len_diff.append(DFS)
+
+
+# In[ ]:
+
+overlap_r = []
+count = 0
+for i in range(0,len(PN_text_s1)):
+    sentence1 = PN_text_s1[i].split()
+    sentence2 = PN_text_s2[i].split()
+    print(sentence1)
+    print(sentence2)
+    for k in range(0,len(sentence1)):
+        for l in range(0,len(sentence2)):
+            if sentence1[k] == sentence2[l]:
+                count = count + 1
+                print(count)         
+    overlap_r.append(count)
+    count = 0
+
+
+# In[ ]:
+
+print(len(overlap_r))
+
+
+# In[ ]:
+
+file = open("X_train.txt", "w")
+for index in range(len(BLEU_scores)):
+    file.write(str(BLEU_scores[index]) + " " + str(len_diff[index]) + " " + str(overlap_r[index]) + "\n")
+file.close()
+
+
+# In[ ]:
+
+file = open("Y_train.txt", "w")
+for index in range(len(BLEU_scores)):
+    file.write(str(PN_label[index]) + "\n")
+file.close()
+
+
+# In[ ]:
+
+print(len(PN_label))
+
+
+# In[ ]:
+
+import numpy
+X_train = numpy.genfromtxt('X_train.txt')  
+X_test = numpy.genfromtxt('X_test.txt')
+Y_train = numpy.genfromtxt('Y_train.txt')
+Y_test = numpy.genfromtxt('Y_test.txt')
+
+
+# In[ ]:
+
+from sklearn import preprocessing
+scaler = preprocessing.StandardScaler().fit(X_train)
+
+
+# In[ ]:
+
+X_train = scaler.transform(X_train) 
+X_test = scaler.transform(X_test)
+import os
+import sys
+#from sklearn.model_selection import train_test_split
+from sklearn.cross_validation import train_test_split
+from sklearn.cross_validation import StratifiedShuffleSplit
+import numpy as np
+import json
+import cv2
+import pdb
+from sklearn import metrics
+from time import time
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.model_selection import GridSearchCV
+from sklearn import linear_model
+acc_score = 0
+
+
+# In[ ]:
+
+penalty = ['l1','l2']
+param_grid = {'C': [0.00001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 100000]}
+clf = GridSearchCV(linear_model.LogisticRegression(penalty=penalty[0], class_weight='balanced'), param_grid)
+clf = clf.fit(X_train,Y_train)
+y_pred = clf.predict(X_test) 
+
+acc_score = accuracy_score(Y_test,y_pred)
+
+
+# In[ ]:
+
+print("The accuracy %f with Logistic Regression having penalty %s",(acc_score,penalty[0]))
+
+
+# In[ ]:
+
+from sklearn import svm
+from sklearn import preprocessing
+X_train = preprocessing.scale(X_train)
+X_test = preprocessing.scale(X_test)
+clf = svm.SVC(C = 1,kernel = 'poly')
+clf = clf.fit(X_train[0:20000],Y_train[0:20000])
+clf.score(X_test,Y_test)
+
